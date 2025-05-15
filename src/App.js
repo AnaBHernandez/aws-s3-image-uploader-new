@@ -1,7 +1,6 @@
 import React from 'react';
 import './App.css';
 import ImageUploader from './components/ImageUploader';
-import './ImageUploader.css';
 
 function App() {
   return (
@@ -12,9 +11,6 @@ function App() {
       <main>
         <ImageUploader />
       </main>
-      <footer>
-        <p>React + AWS S3 Integration</p>
-      </footer>
     </div>
   );
 }
