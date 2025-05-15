@@ -202,7 +202,7 @@ const ImageUploader = () => {
   return (
     <div className="container">
       <div className="header">
-        <h1>📷 AWS S3 Image Uploader</h1>
+        <h1>📷 AWS S3 Image Uploader ✨</h1>
       </div>
       
       <div className="upload-section">
