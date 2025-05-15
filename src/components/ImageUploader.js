@@ -86,7 +86,8 @@ const ImageUploader = () => {
     };
     
     loadSavedCredentials();
-  }, [s3Client, config.bucketName, handleCredentialError]); // Dependencias necesarias
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [s3Client]); // Solo dejamos s3Client como dependencia y usamos eslint-disable para evitar advertencias
 
   const fetchImages = useCallback(async () => {
     try {
