@@ -16,6 +16,12 @@ jobs:
       - name: 📦 Install dependencies
         run: npm install
       - name: 🛠️ Build app
+        env:
+          REACT_APP_AWS_REGION: us-west-1
+          REACT_APP_S3_BUCKET: factoriaf5.anabelen.fase1
+          REACT_APP_AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          REACT_APP_AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          REACT_APP_AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
         run: npm run build
       - name: 🔐 Configure AWS credentials
         run: |
