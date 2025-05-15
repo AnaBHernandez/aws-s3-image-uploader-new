@@ -38,3 +38,23 @@ Para ejecutar este proyecto localmente, necesitarás configurar las variables de
 
 1. Crea un archivo `.env` en la raíz del proyecto basándote en `.env.example`
 2. Completa las variables con tus propias credenciales de AWS Academy:
+
+REACT_APP_AWS_REGION=us-west-1
+REACT_APP_S3_BUCKET=nombre-de-tu-bucket
+REACT_APP_AWS_ACCESS_KEY=tu-access-key
+REACT_APP_AWS_SECRET_KEY=tu-secret-key
+REACT_APP_AWS_SESSION_TOKEN=tu-session-token
+
+### Configuración de CORS para S3
+
+Para que tu aplicación pueda comunicarse con el bucket S3, necesitas configurar CORS:
+
+```json
+[
+ {
+     "AllowedHeaders": ["*"],
+     "AllowedMethods": ["GET", "PUT", "POST", "DELETE", "HEAD"],
+     "AllowedOrigins": ["*"],
+     "ExposeHeaders": ["ETag"]
+ }
+]
