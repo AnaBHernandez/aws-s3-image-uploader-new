@@ -84,8 +84,8 @@ const ImageUploader = () => {
       }
     };
     
-    loadSavedCredentials();
-  }, []);
+     loadSavedCredentials();
+}, [checkConnection]);
 
   const fetchImages = useCallback(async () => {
     try {
