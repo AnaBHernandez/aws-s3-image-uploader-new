@@ -204,7 +204,7 @@ const ImageUploader = () => {
       </div>
       
       <div className="upload-section">
-        <h2>Subir Imagen a AWS S3</h2>
+        <h2>📤 Subir Imagen a AWS S3</h2>
         <div className="upload-form">
           <label className="file-input-label">
             Seleccionar archivo
