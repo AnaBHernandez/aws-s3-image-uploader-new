@@ -1,0 +1,30 @@
+name: Deploy to S3 Ana Belén
+on:
+  push:
+    branches:
+      - main
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout repo
+        uses: actions/checkout@v3
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - name: 📦 Install dependencies
+        run: npm install
+      - name: 🛠️ Build app
+        run: npm run build
+      - name: 🔐 Configure AWS credentials
+        run: |
+          aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws configure set aws_session_token ${{ secrets.AWS_SESSION_TOKEN }}
+          aws configure set region us-east-1
+      - name: ☁️ Deploy to S3
+        run: |
+          aws s3 sync ./build s3://factoriaf5.anabelen.fase1 --delete --acl public-read
+      - name: ✅ Confirmación
+        run: echo "🚀 ¡Despliegue completado correctamente en S3!"
