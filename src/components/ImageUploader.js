@@ -37,22 +37,23 @@ const ImageUploader = () => {
     }
   };
 
-  const checkConnection = async () => {
-    try {
-      const command = new ListObjectsV2Command({
-        Bucket: config.bucketName,
-        MaxKeys: 1
-      });
-      
-      await s3Client.send(command);
-      setError('');
-    } catch (error) {
-      console.error('Error al verificar conexión:', error);
-      setError(handleCredentialError(error));
-    }
-  };
-
   useEffect(() => {
+    // Mover la función checkConnection dentro del useEffect
+    const checkConnection = async () => {
+      try {
+        const command = new ListObjectsV2Command({
+          Bucket: config.bucketName,
+          MaxKeys: 1
+        });
+        
+        await s3Client.send(command);
+        setError('');
+      } catch (error) {
+        console.error('Error al verificar conexión:', error);
+        setError(handleCredentialError(error));
+      }
+    };
+
     const loadSavedCredentials = () => {
       try {
         const savedData = localStorage.getItem('aws_credentials');
@@ -84,8 +85,8 @@ const ImageUploader = () => {
       }
     };
     
-     loadSavedCredentials();
-}, [checkConnection]);
+    loadSavedCredentials();
+  }, [s3Client, config.bucketName, handleCredentialError]); // Dependencias necesarias
 
   const fetchImages = useCallback(async () => {
     try {
