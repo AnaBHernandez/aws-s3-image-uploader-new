@@ -10,34 +10,18 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import config from '../config/aws-config';
 import '../styles/ImageUploader.css';
 
-console.log("Variables de entorno:");
-console.log("REGION:", process.env.REACT_APP_AWS_REGION);
-console.log("BUCKET:", process.env.REACT_APP_S3_BUCKET);
-console.log("ACCESS KEY (primeros 4 caracteres):", process.env.REACT_APP_AWS_ACCESS_KEY ? process.env.REACT_APP_AWS_ACCESS_KEY.substring(0, 4) + "..." : "undefined");
-console.log("SECRET KEY (existe):", !!process.env.REACT_APP_AWS_SECRET_KEY);
-console.log("SESSION TOKEN (existe):", !!process.env.REACT_APP_AWS_SESSION_TOKEN);
-
 const ImageUploader = () => {
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState('');
   const [images, setImages] = useState([]);
   const [error, setError] = useState('');
-  const [checking, setChecking] = useState(false);
-  const [showCredentialsForm, setShowCredentialsForm] = useState(false);
-  const [newCredentials, setNewCredentials] = useState({
-    accessKeyId: '',
-    secretAccessKey: '',
-    sessionToken: ''
-  });
 
-  // Crear cliente S3 con credenciales iniciales
   const [s3Client, setS3Client] = useState(new S3Client({
     region: config.region,
     credentials: config.credentials
   }));
   
-  // Detectar y manejar errores específicos de credenciales
   const handleCredentialError = (error) => {
     console.error('Error detectado:', error);
     
@@ -53,10 +37,7 @@ const ImageUploader = () => {
     }
   };
 
-  // Función para verificar la conexión con AWS
   const checkConnection = async () => {
-    setChecking(true);
-    setMessage('Verificando conexión con AWS...');
     try {
       const command = new ListObjectsV2Command({
         Bucket: config.bucketName,
@@ -64,54 +45,48 @@ const ImageUploader = () => {
       });
       
       await s3Client.send(command);
-      setMessage('✅ Conexión con AWS exitosa. Las credenciales son válidas.');
       setError('');
     } catch (error) {
       console.error('Error al verificar conexión:', error);
       setError(handleCredentialError(error));
-      setMessage('');
-    } finally {
-      setChecking(false);
     }
   };
 
-  // Función para actualizar las credenciales del cliente S3
-  const updateCredentials = () => {
-    try {
-      const updatedConfig = {
-        region: config.region,
-        credentials: {
-          accessKeyId: newCredentials.accessKeyId || config.credentials.accessKeyId,
-          secretAccessKey: newCredentials.secretAccessKey || config.credentials.secretAccessKey,
-          sessionToken: newCredentials.sessionToken || config.credentials.sessionToken
+  useEffect(() => {
+    const loadSavedCredentials = () => {
+      try {
+        const savedData = localStorage.getItem('aws_credentials');
+        if (savedData) {
+          const saved = JSON.parse(savedData);
+          
+          const now = new Date().getTime();
+          const savedTime = saved.savedAt || 0;
+          const hoursSinceSaved = (now - savedTime) / (1000 * 60 * 60);
+          
+          if (hoursSinceSaved < 8) {
+            console.log("Usando credenciales guardadas en localStorage");
+            
+            const updatedClient = new S3Client({
+              region: config.region,
+              credentials: {
+                accessKeyId: saved.accessKeyId,
+                secretAccessKey: saved.secretAccessKey,
+                sessionToken: saved.sessionToken
+              }
+            });
+            
+            setS3Client(updatedClient);
+            setTimeout(checkConnection, 500);
+          }
         }
-      };
-      
-      // Crear un nuevo cliente con las credenciales actualizadas
-      const updatedClient = new S3Client(updatedConfig);
-      setS3Client(updatedClient);
-      
-      // Actualizar la UI
-      setMessage('Credenciales actualizadas. Verificando conexión...');
-      setShowCredentialsForm(false);
-      
-      // Limpiar el formulario
-      setNewCredentials({
-        accessKeyId: '',
-        secretAccessKey: '',
-        sessionToken: ''
-      });
-      
-      // Verificar la conexión con las nuevas credenciales
-      setTimeout(checkConnection, 500);
-      
-    } catch (error) {
-      console.error('Error al actualizar credenciales:', error);
-      setError(`Error al actualizar credenciales: ${error.message}`);
-    }
-  };
+      } catch (error) {
+        console.error("Error al cargar credenciales guardadas:", error);
+      }
+    };
+    
+    loadSavedCredentials();
+  }, []);
 
-  // Función para cargar imágenes con useCallback para evitar recreaciones innecesarias
   const fetchImages = useCallback(async () => {
     try {
       console.log("Intentando conectar con AWS S3...");
@@ -127,7 +102,7 @@ const ImageUploader = () => {
       console.log("Respuesta de S3:", response);
       
       if (response.Contents) {
-        const expiration = 60 * 60; // 1 hora de expiración para URLs firmadas
+        const expiration = 60 * 60;
         const signedUrls = await Promise.all(
           response.Contents.map(async (item) => {
             const command = new GetObjectCommand({
@@ -150,9 +125,8 @@ const ImageUploader = () => {
       console.error('Error al cargar la lista de imágenes:', error);
       setError(handleCredentialError(error));
     }
-  }, [s3Client]); // Incluir s3Client como dependencia
+  }, [s3Client]);
 
-  // Cargar imágenes cuando el componente se monta o cuando cambia s3Client
   useEffect(() => {
     fetchImages();
   }, [fetchImages]);
@@ -226,7 +200,7 @@ const ImageUploader = () => {
   return (
     <div className="container">
       <div className="header">
-        <h1>AWS S3 Image Uploader</h1>
+        <h1>📷 AWS S3 Image Uploader</h1>
       </div>
       
       <div className="upload-section">
@@ -249,15 +223,6 @@ const ImageUploader = () => {
             className="upload-btn"
           >
             {uploading ? 'Subiendo...' : 'Subir Imagen'}
-          </button>
-          
-          {/* Botón para verificar conexión */}
-          <button
-            onClick={checkConnection}
-            disabled={checking}
-            className="check-connection-btn"
-          >
-            {checking ? 'Verificando...' : 'Verificar Conexión'}
           </button>
         </div>
         
@@ -289,49 +254,6 @@ const ImageUploader = () => {
             ))}
           </div>
         )}
-        
-        {/* Botón y formulario para actualizar credenciales */}
-        <div className="credentials-section">
-          <button 
-            className="toggle-credentials-btn"
-            onClick={() => setShowCredentialsForm(!showCredentialsForm)}
-          >
-            {showCredentialsForm ? 'Ocultar Formulario de Credenciales' : 'Actualizar Credenciales'}
-          </button>
-          
-          {showCredentialsForm && (
-            <div className="credentials-form">
-              <h3>Actualizar Credenciales AWS</h3>
-              <div className="form-group">
-                <label>Access Key ID</label>
-                <input 
-                  type="text" 
-                  placeholder="Access Key ID" 
-                  value={newCredentials.accessKeyId}
-                  onChange={(e) => setNewCredentials({...newCredentials, accessKeyId: e.target.value})}
-                />
-              </div>
-              <div className="form-group">
-                <label>Secret Access Key</label>
-                <input 
-                  type="text" 
-                  placeholder="Secret Access Key" 
-                  value={newCredentials.secretAccessKey}
-                  onChange={(e) => setNewCredentials({...newCredentials, secretAccessKey: e.target.value})}
-                />
-              </div>
-              <div className="form-group">
-                <label>Session Token</label>
-                <textarea 
-                  placeholder="Session Token" 
-                  value={newCredentials.sessionToken}
-                  onChange={(e) => setNewCredentials({...newCredentials, sessionToken: e.target.value})}
-                />
-              </div>
-              <button onClick={updateCredentials} className="update-credentials-btn">Actualizar</button>
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );
