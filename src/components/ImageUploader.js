@@ -103,25 +103,33 @@ const ImageUploader = () => {
       const response = await s3Client.send(command);
       console.log("Respuesta de S3:", response);
       
-      if (response.Contents) {
-        const expiration = 60 * 60;
-        const signedUrls = await Promise.all(
-          response.Contents.map(async (item) => {
-            const command = new GetObjectCommand({
-              Bucket: config.bucketName,
-              Key: item.Key,
-            });
-            const url = await getSignedUrl(s3Client, command, { expiresIn: expiration });
-            return {
-              key: item.Key,
-              url: url
-            };
-          })
-        );
-        setImages(signedUrls);
-      } else {
-        setImages([]);
-      }
+if (response.Contents) {
+  const expiration = 60 * 60;
+  const signedUrls = await Promise.all(
+    response.Contents
+      .filter(item => {
+        return !item.Key.endsWith('/') && 
+               (item.Key.endsWith('.jpg') || 
+                item.Key.endsWith('.jpeg') || 
+                item.Key.endsWith('.png') || 
+                item.Key.endsWith('.gif'));
+      })
+      .map(async (item) => {
+        const command = new GetObjectCommand({
+          Bucket: config.bucketName,
+          Key: item.Key,
+        });
+        const url = await getSignedUrl(s3Client, command, { expiresIn: expiration });
+        return {
+          key: item.Key,
+          url: url
+        };
+      })
+  );
+  setImages(signedUrls);
+} else {
+  setImages([]);
+}
       setError('');
     } catch (error) {
       console.error('Error al cargar la lista de imágenes:', error);
