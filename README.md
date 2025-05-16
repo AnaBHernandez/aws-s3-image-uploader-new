@@ -58,3 +58,5 @@ Para que tu aplicación pueda comunicarse con el bucket S3, necesitas configurar
      "ExposeHeaders": ["ETag"]
  }
 ]
+
+
